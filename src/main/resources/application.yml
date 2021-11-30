@@ -1,0 +1,60 @@
+server:
+  port: 9002
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /monitor-app
+  health:
+    circuitbreakers:
+      enabled: true
+        
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      show-details: always
+      
+spring:
+  zipkin:
+    base-url: http://localhost:9411
+  datasource: 
+    url: jdbc:mysql://localhost:3306/olx-advertise
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+  jpa:
+    hibernate.ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5Dialect
+  application:
+    name: advertise-service
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+#    hostname: localhost
+    prefer-ip-address: true
+resilience4j:
+  circuitbreaker:
+    instances:
+      CATEGORY-CIRCUIT-BREAKER:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+#resilience4j:
+#  circuitbreaker:
+#    instances:
+#      CATEGORY-CIRCUIT-BREAKER:
+#        register-health-indicator: true
+#        automatic-transition-from-open-to-half-open-enabled: true
+#        failure-rate-threshold: 50
+#        minimum-number-of-calls: 5
+#        permitted-number-of-calls-in-half-open-state: 3
+#        wait-duration-in-open-state: 5s
