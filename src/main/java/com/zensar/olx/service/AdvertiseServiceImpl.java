@@ -6,6 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +36,8 @@ public class AdvertiseServiceImpl implements AdvertiseService {
 	@Autowired
 	Utils utils;
 
+	@Autowired
+	EntityManager entityManager;
 	@Autowired
 	AdvertisementRepository advertisementRepository;
 
@@ -116,11 +125,25 @@ public class AdvertiseServiceImpl implements AdvertiseService {
 		List<Map> categoriesList = masterDataDelegate.getAllCategories();
 
 		List<Map> statusList = masterDataDelegate.getAllStatuses();
+		//call MasterData service getAllCategories() - RestTemplate
+		//List<Map> categoriesList = masterDataDelegate.getAllCategories();
 
-		List<Advertisement> list = new ArrayList<>();
-		list.add(new Advertisement(1, "Laptop Ad", 3000, 1, 1, 1, LocalDate.now(), LocalDate.now(), "desc"));
-		list.add(new Advertisement(1, "Table Ad", 500, 2, 1, 1, LocalDate.now(), LocalDate.now(), "desc"));
-		return list;
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		CriteriaQuery criteriaQuery = criteriaBuilder.createQuery(AdvertiseEntity.class);
+		Root<AdvertiseEntity> rootEntity = criteriaQuery.from(AdvertiseEntity.class);
+
+		Predicate titlePredicate = criteriaBuilder.equal(rootEntity.get("title"), searchText); //title=searchText
+		Predicate categoryPredicate = criteriaBuilder.equal(rootEntity.get("categoryId"), categoryId);
+
+		Predicate finalPredicate = criteriaBuilder.and(titlePredicate, categoryPredicate);
+		criteriaQuery.where(finalPredicate);
+		TypedQuery<AdvertiseEntity> query = entityManager.createQuery(criteriaQuery);
+		List<AdvertiseEntity> advertiseEntityList = query.getResultList();
+		List<Advertisement> adList = new ArrayList<>();
+		for(AdvertiseEntity entity: advertiseEntityList) {
+			adList.add(utils.getAdDtoFromAdEntity(entity));
+		}
+		return adList;
 	}
 
 	@Override
